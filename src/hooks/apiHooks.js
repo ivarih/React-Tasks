@@ -1,25 +1,84 @@
-import {useEffect, useState} from 'react';
-import {fetchData} from '../utils/fetchData';
+import { useEffect, useState } from 'react';
+
+const MEDIA_API = import.meta.env.VITE_MEDIA_API;
+const AUTH_API = import.meta.env.VITE_AUTH_API || MEDIA_API;
 
 const useMedia = () => {
     const [mediaArray, setMediaArray] = useState([]);
-
-    const getMedia = async () => {
-        try {
-            const mediaData = await fetchData(
-                `${import.meta.env.VITE_MEDIA_API}/media`,
-            );
-            setMediaArray(mediaData);
-        } catch (error) {
-            console.error('Error fetching media:', error);
-        }
-    };
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
+        const getMedia = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`${MEDIA_API}/media`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                setMediaArray(Array.isArray(data) ? data : data.media || []);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         getMedia();
     }, []);
 
-    return {mediaArray};
+    return { mediaArray, loading, error };
 };
 
-export {useMedia};
+const postLogin = async (credentials) => {
+    const response = await fetch(`${AUTH_API}/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+    }
+    return data;
+};
+
+const postUser = async (userData) => {
+    const response = await fetch(`${AUTH_API}/users`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+    }
+    return data;
+};
+
+const postMedia = async (formData, token) => {
+    const response = await fetch(`${MEDIA_API}/media`, {
+        method: 'POST',
+        headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+            }
+            : {},
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Upload failed');
+    }
+    return data;
+};
+
+export { useMedia, postLogin, postUser, postMedia };
