@@ -1,38 +1,14 @@
-import { useState } from 'react';
 import useForm from '../hooks/useForm';
-import { postLogin } from '../hooks/apiHooks';
+import { useUserContext } from '../hooks/contextHooks';
 
-const LoginForm = ({ onLoginSuccess }) => {
-    const [statusMessage, setStatusMessage] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+const LoginForm = () => {
+    const { handleLogin } = useUserContext();
 
-    const doLogin = async (formValues) => {
-        setStatusMessage('');
-        setErrorMessage('');
-        setSubmitting(true);
-
+    const doLogin = async () => {
         try {
-            const result = await postLogin({
-                username: formValues.username,
-                password: formValues.password,
-            });
-
-            if (result.token) {
-                localStorage.setItem('token', result.token);
-            }
-            if (result.user) {
-                localStorage.setItem('user', JSON.stringify(result.user));
-            }
-
-            setStatusMessage(result.message || 'Logged in successfully.');
-            if (onLoginSuccess) {
-                onLoginSuccess(result);
-            }
-        } catch (err) {
-            setErrorMessage(err.message);
-        } finally {
-            setSubmitting(false);
+            await handleLogin(inputs);
+        } catch (e) {
+            alert(e.message);
         }
     };
 
@@ -72,12 +48,7 @@ const LoginForm = ({ onLoginSuccess }) => {
                 />
             </div>
 
-            <button type="submit" disabled={submitting}>
-                {submitting ? 'Logging in...' : 'Login'}
-            </button>
-
-            {statusMessage && <p>{statusMessage}</p>}
-            {errorMessage && <p>{errorMessage}</p>}
+            <button type="submit">Login</button>
         </form>
     );
 };

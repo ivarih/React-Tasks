@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import useForm from '../hooks/useForm';
-import { postUser } from '../hooks/apiHooks';
+import { useUser } from '../hooks/apiHooks';
 
 const RegisterForm = ({ onRegisterSuccess }) => {
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const { postUser } = useUser();
 
     const doRegister = async (formValues) => {
         setStatusMessage('');

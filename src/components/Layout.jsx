@@ -1,21 +1,44 @@
+import { useEffect } from 'react';
 import { Link, Outlet } from 'react-router';
+import { useUserContext } from '../hooks/contextHooks';
+import Logout from './Logout';
 
 const Layout = () => {
+    const { user, handleAutoLogin } = useUserContext();
+
+    useEffect(() => {
+        handleAutoLogin();
+    }, []);
+
     return (
         <div>
-            <nav>
-                <ul>
-                    <li>
-                        <Link to="/">Home</Link>
-                    </li>
-                    <li>
-                        <Link to="/profile">Profile</Link>
-                    </li>
-                    <li>
-                        <Link to="/upload">Upload</Link>
-                    </li>
-                </ul>
-            </nav>
+            <header>
+                <nav>
+                    <ul>
+                        <li>
+                            <Link to="/">Home</Link>
+                        </li>
+                        {user ? (
+                            <>
+                                <li>
+                                    <Link to="/profile">Profile</Link>
+                                </li>
+                                <li>
+                                    <Link to="/upload">Upload</Link>
+                                </li>
+                                <li>
+                                    <Logout />
+                                </li>
+                            </>
+                        ) : (
+                            <li>
+                                <Link to="/login">Login</Link>
+                            </li>
+                        )}
+                    </ul>
+                </nav>
+            </header>
+
             <main>
                 <Outlet />
             </main>

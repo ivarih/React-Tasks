@@ -31,38 +31,6 @@ const useMedia = () => {
     return { mediaArray, loading, error };
 };
 
-const postLogin = async (credentials) => {
-    const response = await fetch(`${AUTH_API}/auth/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-    }
-    return data;
-};
-
-const postUser = async (userData) => {
-    const response = await fetch(`${AUTH_API}/users`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-    }
-    return data;
-};
-
 const postMedia = async (formData, token) => {
     const response = await fetch(`${MEDIA_API}/media`, {
         method: 'POST',
@@ -81,4 +49,58 @@ const postMedia = async (formData, token) => {
     return data;
 };
 
-export { useMedia, postLogin, postUser, postMedia };
+const useAuthentication = () => {
+    const postLogin = async (credentials) => {
+        const response = await fetch(`${AUTH_API}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
+        }
+        return data;
+    };
+
+    return { postLogin };
+};
+
+const useUser = () => {
+    const postUser = async (userData) => {
+        const response = await fetch(`${AUTH_API}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Registration failed');
+        }
+        return data;
+    };
+
+    const getUserByToken = async (token) => {
+        const response = await fetch(`${AUTH_API}/users/token`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to get user from token');
+        }
+        return data;
+    };
+
+    return { postUser, getUserByToken };
+};
+
+export { useMedia, postMedia, useAuthentication, useUser };
