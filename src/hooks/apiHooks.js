@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 const MEDIA_API = import.meta.env.VITE_MEDIA_API;
 const AUTH_API = import.meta.env.VITE_AUTH_API || MEDIA_API;
+const UPLOAD_SERVER = import.meta.env.VITE_UPLOAD_SERVER;
 
 const useMedia = () => {
     const [mediaArray, setMediaArray] = useState([]);
@@ -28,25 +29,56 @@ const useMedia = () => {
         getMedia();
     }, []);
 
-    return { mediaArray, loading, error };
+    const postMedia = async (fileData, inputs, token) => {
+        const mediaPayload = {
+            title: inputs.title,
+            description: inputs.description,
+            filename: fileData.filename || fileData.data?.filename,
+            filesize: fileData.filesize || fileData.data?.filesize || file.size,
+            media_type:
+                fileData.media_type || fileData.data?.media_type || fileData.mimetype,
+        };
+
+        const response = await fetch(`${MEDIA_API}/media`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(mediaPayload),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to create media item');
+        }
+        return data;
+    };
+
+    return { mediaArray, loading, error, postMedia };
 };
 
-const postMedia = async (formData, token) => {
-    const response = await fetch(`${MEDIA_API}/media`, {
-        method: 'POST',
-        headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-            }
-            : {},
-        body: formData,
-    });
+const useFile = () => {
+    const postFile = async (file, token) => {
+        const formData = new FormData();
+        formData.append('file', file);
 
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.message || 'Upload failed');
-    }
-    return data;
+        const response = await fetch(`${UPLOAD_SERVER}/upload`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'File upload failed');
+        }
+        return data;
+    };
+
+    return { postFile };
 };
 
 const useAuthentication = () => {
@@ -103,4 +135,5 @@ const useUser = () => {
     return { postUser, getUserByToken };
 };
 
-export { useMedia, postMedia, useAuthentication, useUser };
+export { useMedia, useFile, useAuthentication, useUser };
+

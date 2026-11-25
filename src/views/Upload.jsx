@@ -1,97 +1,91 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import useForm from '../hooks/useForm';
-import { postMedia } from '../hooks/apiHooks';
+import { useFile, useMedia } from '../hooks/apiHooks';
 
 const Upload = () => {
-    const [statusMessage, setStatusMessage] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+    const [file, setFile] = useState(null);
+    const { postFile } = useFile();
+    const { postMedia } = useMedia();
+    const navigate = useNavigate();
 
-    const doUpload = async (formValues) => {
-        setStatusMessage('');
-        setErrorMessage('');
-
-        if (!formValues.file) {
-            setErrorMessage('Please select a file before uploading.');
-            return;
-        }
-
-        setSubmitting(true);
-        try {
-            const formData = new FormData();
-            formData.append('title', formValues.title);
-            formData.append('description', formValues.description);
-            formData.append('file', formValues.file);
-
-            const token = localStorage.getItem('token');
-            const result = await postMedia(formData, token);
-
-            resetForm();
-            setStatusMessage(result.message || 'Media uploaded successfully.');
-        } catch (err) {
-            setErrorMessage(err.message);
-        } finally {
-            setSubmitting(false);
+    const handleFileChange = (evt) => {
+        if (evt.target.files && evt.target.files[0]) {
+            console.log(evt.target.files[0]);
+            setFile(evt.target.files[0]);
         }
     };
 
-    const { inputs, handleInputChange, handleSubmit, resetForm } = useForm(
+    const doUpload = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const fileResult = await postFile(file, token);
+            await postMedia(fileResult, inputs, token, file);
+            navigate('/');
+        } catch (e) {
+            console.log(e.message);
+        }
+    };
+
+    const { inputs, handleInputChange, handleSubmit } = useForm(
         {
             title: '',
             description: '',
-            file: null,
         },
         doUpload
     );
 
     return (
-        <section>
-            <h1>Upload Media</h1>
-
+        <>
+            <h1>Upload</h1>
             <form onSubmit={handleSubmit}>
                 <div>
-                    <label htmlFor="upload-title">Title</label>
+                    <label htmlFor="title">Title</label>
                     <input
-                        id="upload-title"
                         name="title"
                         type="text"
+                        id="title"
                         value={inputs.title}
                         onChange={handleInputChange}
-                        required
                     />
                 </div>
-
                 <div>
-                    <label htmlFor="upload-description">Description</label>
+                    <label htmlFor="description">Description</label>
                     <textarea
-                        id="upload-description"
                         name="description"
-                        rows="4"
+                        rows={5}
+                        id="description"
                         value={inputs.description}
                         onChange={handleInputChange}
-                    />
+                    ></textarea>
                 </div>
-
                 <div>
-                    <label htmlFor="upload-file">File</label>
+                    <label htmlFor="file">File</label>
                     <input
-                        id="upload-file"
                         name="file"
                         type="file"
-                        accept="image/*,video/*"
-                        onChange={handleInputChange}
-                        required
+                        id="file"
+                        accept="image/*, video/*"
+                        onChange={handleFileChange}
                     />
                 </div>
-
-                <button type="submit" disabled={submitting}>
-                    {submitting ? 'Uploading...' : 'Upload'}
+                <img
+                    src={
+                        file
+                            ? URL.createObjectURL(file)
+                            : 'https://placehold.co/200?text=Choose+image'
+                    }
+                    alt="preview"
+                    width="200"
+                />
+                <button
+                    type="submit"
+                    disabled={!(file && inputs.title.length > 3)}
+                >
+                    Upload
                 </button>
-
-                {statusMessage && <p>{statusMessage}</p>}
-                {errorMessage && <p>{errorMessage}</p>}
             </form>
-        </section>
+        </>
     );
 };
 
